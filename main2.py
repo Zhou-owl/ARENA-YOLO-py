@@ -74,7 +74,7 @@ window = sg.Window('camera',
             font=("Arial Bold",20),
             finalize=True)
 
-cap = cv2.VideoCapture("/dev/v4l/by-id/usb-046d_Logitech_BRIO_13100349-video-index0")
+cap = cv2.VideoCapture("/dev/v4l/by-id/usb-046d_Logitech_BRIO_71D906FE-video-index0")
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1000)  
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 800)  
 
@@ -135,7 +135,7 @@ while True:
  
                 text_str = str(intersection_w.tolist())
                 cv2.putText(marked,text_str,(int(center_x),int(center_y)),thickness=2,fontFace=cv2.FONT_HERSHEY_SIMPLEX,fontScale=0.5,color=(0,0,255))
-                with open('value0.txt', 'w') as file:
+                with open('value1.txt', 'w') as file:
                     file.write(str(text_str))
 
 
