@@ -1,7 +1,7 @@
 from arena import *
 import random
 
-cam_num = 2
+cam_num = 3
 # setup library
 scene = Scene(host="arenaxr.org", namespace = "yongqiz2", scene="yolo")
 
