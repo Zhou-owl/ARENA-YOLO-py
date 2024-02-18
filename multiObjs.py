@@ -62,6 +62,8 @@ layout = [
     [sg.Checkbox('Calibration', key='calib')],
     [sg.Checkbox('FindTag', key='tag')],
     [sg.Checkbox('Chair (check Tag and uncheck Calib)', key='chair')],
+    [sg.Checkbox('Multiple objects', key='multi')],
+
     [sg.Button('Capture', size=(20, 3))],
     [sg.Button('Exit', size=(20, 3))]
 ]
@@ -74,7 +76,7 @@ window = sg.Window('camera',
             font=("Arial Bold",20),
             finalize=True)
 
-cap = cv2.VideoCapture("/dev/v4l/by-id/usb-046d_Logitech_BRIO_71D906FE-video-index0")
+cap = cv2.VideoCapture("/dev/v4l/by-id/usb-046d_Logitech_BRIO_13100349-video-index0")
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1000)  
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 800)  
 
@@ -108,6 +110,8 @@ while True:
     gray = cv2.cvtColor(marked, cv2.COLOR_BGR2GRAY)
     fx,fy,cx,cy = mtx[0][0],mtx[1][1],mtx[0][2], mtx[1][2]
     cam_params = [fx, fy, cx, cy]
+    names = model_basic.names
+
     tags = at_detector.detect(gray,estimate_tag_pose=True,camera_params=cam_params,tag_size=0.15)
 
     if len(tags)>0:
@@ -136,11 +140,34 @@ while True:
     
                     text_str = str(intersection_w.tolist())
                     cv2.putText(marked,text_str,(int(center_x),int(center_y)),thickness=2,fontFace=cv2.FONT_HERSHEY_SIMPLEX,fontScale=0.5,color=(0,0,255))
-                    with open('value2.txt', 'w') as file:
+                    with open('value.txt', 'w') as file:
                         file.write(str(text_str))
-                else:
-                    with open('value2.txt', 'w') as file:
-                        file.write("no valid chairs")
+    if values['multi']:
+        text_list = []
+        for box, label, conf in zip(boxes, classes, confidences):
+            class_name = names[int(label)]
+            center_x = box[0] + (box[2] - box[0]) /2 # col from up left
+            # center_y = box[1] + (box[3] - box[1])*3/4 # row from up left
+            center_y = box[3]
+            cv2.circle(marked, (int(center_x),int(center_y)), 6, (0, 255, 255), 3)
+            point = [[center_x,center_y]]
+            point = np.array(point,dtype='float')
+            dir_cam = pixel2ray(point, mtx, dist).reshape((3,1))
+            origin_w = -np.dot(rotm.T, (np.array([[0],[0],[0]])- trasm))
+            dir_w = np.dot(rotm.T, dir_cam)
+            normal = np.array([[0,0,1]])
+            plane_x0 = np.array([[1,0,0]]).T
+            t = (np.dot(normal, origin_w)-np.dot(normal,plane_x0))/np.dot(normal,dir_w)
+            intersection_w = (origin_w - t * dir_w)
+            intersection_w = np.around(intersection_w,decimals=2)
+
+            text_str = str(intersection_w.tolist()) 
+            cv2.putText(marked,text_str,(int(center_x),int(center_y)),thickness=2,fontFace=cv2.FONT_HERSHEY_SIMPLEX,fontScale=0.5,color=(0,0,255))
+            temp_text = text_str + "|" + str(class_name)
+            text_list.append(temp_text)
+        with open('value.txt', 'w') as file:
+            write_str = str.join("\n", text_list)
+            file.write(write_str)
 
 
 
